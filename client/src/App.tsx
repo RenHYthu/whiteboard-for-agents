@@ -1,0 +1,102 @@
+import React, { useState, useEffect } from 'react';
+import { io, Socket } from 'socket.io-client';
+
+const App: React.FC = () => {
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [content, setContent] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // 初始化 Socket.IO 连接
+    const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+    const newSocket = io(serverUrl, {
+      transports: ['websocket', 'polling']
+    });
+    setSocket(newSocket);
+
+    // 超时保护：5秒后自动停止加载
+    const loadingTimeout = setTimeout(() => {
+      console.log('加载超时，显示编辑器');
+      setIsLoading(false);
+    }, 5000);
+
+    // 连接事件
+    newSocket.on('connect', () => {
+      console.log('已连接到服务器，Socket ID:', newSocket.id);
+
+      // 加入默认白板
+      newSocket.emit('join-whiteboard', 'main-board');
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('与服务器断开连接');
+    });
+
+    // 接收白板内容
+    newSocket.on('whiteboard-content', (data) => {
+      console.log('收到白板内容:', data);
+      setContent(data.content);
+      setIsLoading(false);
+      clearTimeout(loadingTimeout);
+    });
+
+    // 接收内容更新
+    newSocket.on('content-updated', (data) => {
+      console.log('收到内容更新:', data);
+      setContent(data.content);
+    });
+
+    // 错误处理
+    newSocket.on('error', (error) => {
+      console.error('Socket 错误:', error);
+      setIsLoading(false);
+      clearTimeout(loadingTimeout);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('连接错误:', error);
+      setIsLoading(false);
+      clearTimeout(loadingTimeout);
+    });
+
+    return () => {
+      clearTimeout(loadingTimeout);
+      newSocket.close();
+    };
+  }, []);
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    setContent(newContent);
+    
+    if (socket) {
+      socket.emit('content-update', {
+        whiteboardId: 'main-board',
+        content: newContent
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400 mx-auto mb-4"></div>
+          <p className="text-gray-600">正在加载...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <textarea
+      className="document-textarea"
+      value={content}
+      onChange={handleContentChange}
+      placeholder="开始输入..."
+      spellCheck={false}
+    />
+  );
+};
+
+export default App;
