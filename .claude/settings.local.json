@@ -16,7 +16,10 @@
       "Bash(node test-websocket.js:*)",
       "Bash(python3:*)",
       "Bash(npm install:*)",
-      "Bash(timeout 5 node:*)"
+      "Bash(timeout 5 node:*)",
+      "Bash(\"/Users/renhongyu/Documents/whiteboard for agents/test-mcp.sh\")",
+      "Bash(SESSION_ID=\"e1237557-fc8b-410c-9225-8cdf85314528\":*)",
+      "Bash(xargs kill:*)"
     ],
     "deny": [],
     "ask": []
