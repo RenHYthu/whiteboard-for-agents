@@ -19,7 +19,8 @@
       "Bash(timeout 5 node:*)",
       "Bash(\"/Users/renhongyu/Documents/whiteboard for agents/test-mcp.sh\")",
       "Bash(SESSION_ID=\"e1237557-fc8b-410c-9225-8cdf85314528\":*)",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "Bash(\"/Users/renhongyu/Documents/whiteboard for agents/diagnose-mcp.sh\")"
     ],
     "deny": [],
     "ask": []
