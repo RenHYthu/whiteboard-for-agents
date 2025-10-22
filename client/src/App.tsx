@@ -15,12 +15,12 @@ const App: React.FC = () => {
     setSocket(newSocket);
 
     // 监听来自其他页面的消息（ChatGPT 内容）
-    const handleMessage = (event) => {
+    const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'WRITE_CONTENT') {
         console.log('收到 ChatGPT 内容:', event.data.content);
         const newContent = content + '\n\n' + event.data.content;
         setContent(newContent);
-        
+
         if (newSocket) {
           newSocket.emit('content-update', {
             whiteboardId: 'main-board',
