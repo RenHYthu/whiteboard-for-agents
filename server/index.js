@@ -62,8 +62,36 @@ function loadData() {
   }
 }
 
-// 保存数据到文件
+// 保存数据到文件（带防抖）
+let saveTimeout = null;
 function saveData() {
+  // 清除之前的定时器
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
+
+  // 500ms 后保存，避免频繁写入
+  saveTimeout = setTimeout(() => {
+    try {
+      const data = {};
+      whiteboards.forEach((value, key) => {
+        data[key] = {
+          id: value.id,
+          content: value.content,
+          lastModified: value.lastModified
+        };
+      });
+
+      fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+      console.log('数据已保存到文件');
+    } catch (error) {
+      console.error('保存数据失败:', error);
+    }
+  }, 500);
+}
+
+// 立即保存（不防抖）
+function saveDataNow() {
   try {
     const data = {};
     whiteboards.forEach((value, key) => {
@@ -75,7 +103,7 @@ function saveData() {
     });
 
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-    console.log('数据已保存到文件');
+    console.log('数据已立即保存到文件');
   } catch (error) {
     console.error('保存数据失败:', error);
   }
@@ -211,7 +239,26 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
+// 优雅关闭：在进程结束前保存数据
+process.on('SIGTERM', () => {
+  console.log('收到 SIGTERM 信号，正在保存数据...');
+  saveDataNow();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('收到 SIGINT 信号，正在保存数据...');
+  saveDataNow();
+  process.exit(0);
+});
+
+// 定期保存（每30秒）
+setInterval(() => {
+  saveDataNow();
+}, 30000);
+
 server.listen(PORT, () => {
   console.log(`服务器运行在端口 ${PORT}`);
   console.log(`访问地址: http://localhost:${PORT}`);
+  console.log(`数据目录: ${DATA_DIR}`);
 });
