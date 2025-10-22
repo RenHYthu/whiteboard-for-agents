@@ -61,6 +61,7 @@ const App: React.FC = () => {
     newSocket.on('whiteboard-content', (data) => {
       console.log('收到白板内容:', data);
       console.log('内容长度:', data.content?.length || 0);
+      console.log('内容预览:', data.content?.substring(0, 50) || '(空)');
       setContent(data.content || '');
       setIsLoading(false);
       clearTimeout(loadingTimeout);

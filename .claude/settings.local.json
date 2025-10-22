@@ -12,7 +12,9 @@
       "Bash(node test-save.js:*)",
       "Bash(npm install)",
       "Bash(chmod:*)",
-      "Bash(node index.js:*)"
+      "Bash(node index.js:*)",
+      "Bash(node test-websocket.js:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
