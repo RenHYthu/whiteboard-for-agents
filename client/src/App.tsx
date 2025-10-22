@@ -22,8 +22,27 @@ const App: React.FC = () => {
     }, 5000);
 
     // 初始化 Socket.IO 连接
-    const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
-    console.log('连接到服务器:', serverUrl);
+    // 智能检测服务器 URL：
+    // 1. 生产环境：使用当前域名（Railway、无头浏览器等）
+    // 2. 开发环境：使用 localhost:3001
+    const getServerUrl = () => {
+      // 如果明确设置了环境变量，使用环境变量
+      if (import.meta.env.VITE_SERVER_URL) {
+        return import.meta.env.VITE_SERVER_URL;
+      }
+
+      // 如果是生产环境（非 localhost），使用当前域名
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        return window.location.origin;
+      }
+
+      // 开发环境默认使用 localhost:3001
+      return 'http://localhost:3001';
+    };
+
+    const serverUrl = getServerUrl();
+    console.log('🌐 当前域名:', window.location.hostname);
+    console.log('🔌 连接到服务器:', serverUrl);
 
     const newSocket = io(serverUrl, {
       transports: ['websocket', 'polling'],
