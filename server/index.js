@@ -31,12 +31,19 @@ const whiteboards = new Map();
 const DEFAULT_BOARD_ID = 'main-board';
 
 // 数据持久化文件路径
-const DATA_DIR = path.join(__dirname, 'data');
+// 优先使用 Railway Volume 挂载路径（持久化存储），如果不存在则使用本地路径
+const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH
+  ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'whiteboards')
+  : path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'whiteboards.json');
+
+console.log('数据存储路径:', DATA_DIR);
+console.log('使用 Railway Volume:', !!process.env.RAILWAY_VOLUME_MOUNT_PATH);
 
 // 确保数据目录存在
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
+  console.log('数据目录已创建:', DATA_DIR);
 }
 
 // 从文件加载数据
