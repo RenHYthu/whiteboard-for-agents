@@ -24,15 +24,15 @@ const App: React.FC = () => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'WRITE_CONTENT') {
         console.log('收到 ChatGPT 内容:', event.data.content);
-        const newContent = content + '\n\n' + event.data.content;
-        setContent(newContent);
-
-        if (newSocket) {
+        // 使用函数式更新避免闭包问题
+        setContent((prevContent) => {
+          const newContent = prevContent + '\n\n' + event.data.content;
           newSocket.emit('content-update', {
             whiteboardId: pathBoardId,
             content: newContent
           });
-        }
+          return newContent;
+        });
       }
     };
 
@@ -69,7 +69,7 @@ const App: React.FC = () => {
     // 接收内容更新
     newSocket.on('content-updated', (data) => {
       console.log('收到内容更新:', data);
-      setContent(data.content);
+      setContent(data.content || '');
     });
 
     // 错误处理
@@ -90,7 +90,7 @@ const App: React.FC = () => {
       clearTimeout(loadingTimeout);
       newSocket.close();
     };
-  }, [content]);
+  }, []); // 修复：移除 content 依赖，只在组件挂载时运行一次
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
