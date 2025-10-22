@@ -14,6 +14,24 @@ const App: React.FC = () => {
     });
     setSocket(newSocket);
 
+    // 监听来自其他页面的消息（ChatGPT 内容）
+    const handleMessage = (event) => {
+      if (event.data.type === 'WRITE_CONTENT') {
+        console.log('收到 ChatGPT 内容:', event.data.content);
+        const newContent = content + '\n\n' + event.data.content;
+        setContent(newContent);
+        
+        if (newSocket) {
+          newSocket.emit('content-update', {
+            whiteboardId: 'main-board',
+            content: newContent
+          });
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
     // 超时保护：5秒后自动停止加载
     const loadingTimeout = setTimeout(() => {
       console.log('加载超时，显示编辑器');
@@ -60,10 +78,11 @@ const App: React.FC = () => {
     });
 
     return () => {
+      window.removeEventListener('message', handleMessage);
       clearTimeout(loadingTimeout);
       newSocket.close();
     };
-  }, []);
+  }, [content]);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;

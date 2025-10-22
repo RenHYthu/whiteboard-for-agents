@@ -4,6 +4,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -29,7 +30,61 @@ const whiteboards = new Map();
 // 默认白板 ID
 const DEFAULT_BOARD_ID = 'main-board';
 
-// 初始化默认白板
+// 数据持久化文件路径
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'whiteboards.json');
+
+// 确保数据目录存在
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// 从文件加载数据
+function loadData() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const data = fs.readFileSync(DATA_FILE, 'utf8');
+      const parsed = JSON.parse(data);
+
+      // 恢复白板数据
+      Object.keys(parsed).forEach(key => {
+        whiteboards.set(key, {
+          ...parsed[key],
+          users: new Set(),
+          lastModified: new Date(parsed[key].lastModified)
+        });
+      });
+
+      console.log('数据已从文件加载');
+    }
+  } catch (error) {
+    console.error('加载数据失败:', error);
+  }
+}
+
+// 保存数据到文件
+function saveData() {
+  try {
+    const data = {};
+    whiteboards.forEach((value, key) => {
+      data[key] = {
+        id: value.id,
+        content: value.content,
+        lastModified: value.lastModified
+      };
+    });
+
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+    console.log('数据已保存到文件');
+  } catch (error) {
+    console.error('保存数据失败:', error);
+  }
+}
+
+// 加载已保存的数据
+loadData();
+
+// 初始化默认白板（如果不存在）
 if (!whiteboards.has(DEFAULT_BOARD_ID)) {
   whiteboards.set(DEFAULT_BOARD_ID, {
     id: DEFAULT_BOARD_ID,
@@ -37,6 +92,7 @@ if (!whiteboards.has(DEFAULT_BOARD_ID)) {
     lastModified: new Date(),
     users: new Set()
   });
+  saveData();
 }
 
 // API 路由
@@ -110,23 +166,26 @@ io.on('connection', (socket) => {
   socket.on('content-update', (data) => {
     const { whiteboardId, content } = data;
     const whiteboard = whiteboards.get(whiteboardId);
-    
+
     if (!whiteboard) {
       socket.emit('error', { message: '白板不存在' });
       return;
     }
-    
+
     // 更新内容
     whiteboard.content = content;
     whiteboard.lastModified = new Date();
-    
+
+    // 保存到文件
+    saveData();
+
     // 广播给同一白板的其他用户
     socket.to(whiteboardId).emit('content-updated', {
       content,
       lastModified: whiteboard.lastModified
     });
-    
-    console.log(`白板 ${whiteboardId} 内容已更新`);
+
+    console.log(`白板 ${whiteboardId} 内容已更新并保存`);
   });
   
   // 用户断开连接
