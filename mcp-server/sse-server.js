@@ -267,6 +267,9 @@ function createMCPServer() {
   return server;
 }
 
+// 存储活跃的服务器实例
+const activeServers = new Map();
+
 // SSE 端点
 app.get('/sse', async (req, res) => {
   console.log('新的 SSE 连接');
@@ -274,18 +277,48 @@ app.get('/sse', async (req, res) => {
   const server = createMCPServer();
   const transport = new SSEServerTransport('/message', res);
 
+  // 生成唯一的会话 ID
+  const sessionId = transport._sessionId || Date.now().toString();
+  activeServers.set(sessionId, { server, transport });
+
+  console.log(`Session ${sessionId} 已创建`);
+
   await server.connect(transport);
 
   // 连接关闭时清理
   req.on('close', () => {
-    console.log('SSE 连接关闭');
+    console.log(`SSE 连接关闭: ${sessionId}`);
+    activeServers.delete(sessionId);
   });
 });
 
 // POST 端点用于接收消息
 app.post('/message', async (req, res) => {
-  // SSE transport 会处理这个
-  res.status(200).end();
+  const sessionId = req.query.sessionId;
+
+  console.log(`收到消息请求: sessionId=${sessionId}`);
+
+  if (!sessionId) {
+    console.error('缺少 sessionId');
+    return res.status(400).json({ error: 'Missing sessionId' });
+  }
+
+  const session = activeServers.get(sessionId);
+
+  if (!session) {
+    console.error(`找不到 session: ${sessionId}`);
+    return res.status(404).json({ error: 'Session not found' });
+  }
+
+  try {
+    // 让 transport 处理消息
+    await session.transport.handlePostMessage(req, res);
+  } catch (error) {
+    console.error('处理消息失败:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 });
 
 // 启动服务器
