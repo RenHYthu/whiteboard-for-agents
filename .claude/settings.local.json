@@ -14,7 +14,9 @@
       "Bash(chmod:*)",
       "Bash(node index.js:*)",
       "Bash(node test-websocket.js:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout 5 node:*)"
     ],
     "deny": [],
     "ask": []
