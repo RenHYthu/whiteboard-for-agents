@@ -9,7 +9,10 @@
       "Bash(git push:*)",
       "Bash(cat:*)",
       "Bash(curl:*)",
-      "Bash(node test-save.js:*)"
+      "Bash(node test-save.js:*)",
+      "Bash(npm install)",
+      "Bash(chmod:*)",
+      "Bash(node index.js:*)"
     ],
     "deny": [],
     "ask": []
