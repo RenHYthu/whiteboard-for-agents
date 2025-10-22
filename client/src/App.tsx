@@ -13,12 +13,22 @@ const App: React.FC = () => {
     const pathBoardId = path.slice(1) || 'main-board'; // 去掉开头的 '/'
     setBoardId(pathBoardId);
 
+    console.log('初始化白板，ID:', pathBoardId);
+
+    // 超时保护：5秒后自动停止加载
+    const loadingTimeout = setTimeout(() => {
+      console.log('加载超时，显示编辑器');
+      setIsLoading(false);
+    }, 5000);
+
     // 初始化 Socket.IO 连接
     const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+    console.log('连接到服务器:', serverUrl);
+
     const newSocket = io(serverUrl, {
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      autoConnect: true
     });
-    setSocket(newSocket);
 
     // 监听来自其他页面的消息（ChatGPT 内容）
     const handleMessage = (event: MessageEvent) => {
@@ -38,20 +48,23 @@ const App: React.FC = () => {
 
     window.addEventListener('message', handleMessage);
 
-    // 超时保护：5秒后自动停止加载
-    const loadingTimeout = setTimeout(() => {
-      console.log('加载超时，显示编辑器');
-      setIsLoading(false);
-    }, 5000);
-
-    // 连接事件
+    // 连接事件 - 必须在 io() 之后立即注册
     newSocket.on('connect', () => {
-      console.log('已连接到服务器，Socket ID:', newSocket.id);
-      console.log('白板 ID:', pathBoardId);
+      console.log('✅ 已连接到服务器，Socket ID:', newSocket.id);
+      console.log('📋 白板 ID:', pathBoardId);
+      console.log('🔄 发送 join-whiteboard 请求...');
 
       // 加入指定白板
       newSocket.emit('join-whiteboard', pathBoardId);
     });
+
+    // 如果已经连接，立即加入白板
+    if (newSocket.connected) {
+      console.log('Socket 已经连接，立即加入白板');
+      newSocket.emit('join-whiteboard', pathBoardId);
+    }
+
+    setSocket(newSocket);
 
     newSocket.on('disconnect', () => {
       console.log('与服务器断开连接');
@@ -59,17 +72,24 @@ const App: React.FC = () => {
 
     // 接收白板内容
     newSocket.on('whiteboard-content', (data) => {
-      console.log('收到白板内容:', data);
-      console.log('内容长度:', data.content?.length || 0);
-      console.log('内容预览:', data.content?.substring(0, 50) || '(空)');
-      setContent(data.content || '');
+      console.log('📨 收到白板内容:', data);
+      console.log('📏 内容长度:', data.content?.length || 0);
+      console.log('👁️ 内容预览:', data.content?.substring(0, 80) || '(空)');
+
+      const receivedContent = data.content || '';
+      console.log('💾 设置内容到状态, 长度:', receivedContent.length);
+
+      setContent(receivedContent);
       setIsLoading(false);
       clearTimeout(loadingTimeout);
+
+      console.log('✅ 白板内容加载完成');
     });
 
     // 接收内容更新
     newSocket.on('content-updated', (data) => {
-      console.log('收到内容更新:', data);
+      console.log('🔄 收到内容更新:', data);
+      console.log('📏 更新后长度:', data.content?.length || 0);
       setContent(data.content || '');
     });
 
