@@ -148,14 +148,97 @@ app.post('/api/whiteboard', (req, res) => {
     lastModified: new Date(),
     users: new Set()
   };
-  
+
   whiteboards.set(id, whiteboard);
-  
+
   res.json({
     id: whiteboard.id,
     content: whiteboard.content,
     lastModified: whiteboard.lastModified,
     userCount: 0
+  });
+});
+
+// API: 追加内容到白板
+app.post('/api/whiteboard/:id/append', (req, res) => {
+  const { id } = req.params;
+  const { content, separator } = req.body;
+
+  if (!content) {
+    return res.status(400).json({ error: '内容不能为空' });
+  }
+
+  const whiteboard = whiteboards.get(id);
+
+  if (!whiteboard) {
+    return res.status(404).json({ error: '白板不存在' });
+  }
+
+  // 追加内容
+  const sep = separator || '\n\n';
+  const newContent = whiteboard.content
+    ? whiteboard.content + sep + content
+    : content;
+
+  whiteboard.content = newContent;
+  whiteboard.lastModified = new Date();
+
+  // 保存到文件
+  saveData();
+
+  // 通过 WebSocket 广播给所有连接的用户
+  io.to(id).emit('content-updated', {
+    content: newContent,
+    lastModified: whiteboard.lastModified
+  });
+
+  console.log(`白板 ${id} 内容已通过 API 追加`);
+
+  res.json({
+    success: true,
+    id: whiteboard.id,
+    content: whiteboard.content,
+    lastModified: whiteboard.lastModified,
+    contentLength: whiteboard.content.length
+  });
+});
+
+// API: 替换白板全部内容
+app.post('/api/whiteboard/:id/update', (req, res) => {
+  const { id } = req.params;
+  const { content } = req.body;
+
+  if (content === undefined) {
+    return res.status(400).json({ error: '内容不能为空' });
+  }
+
+  const whiteboard = whiteboards.get(id);
+
+  if (!whiteboard) {
+    return res.status(404).json({ error: '白板不存在' });
+  }
+
+  // 替换内容
+  whiteboard.content = content;
+  whiteboard.lastModified = new Date();
+
+  // 保存到文件
+  saveData();
+
+  // 通过 WebSocket 广播给所有连接的用户
+  io.to(id).emit('content-updated', {
+    content: content,
+    lastModified: whiteboard.lastModified
+  });
+
+  console.log(`白板 ${id} 内容已通过 API 更新`);
+
+  res.json({
+    success: true,
+    id: whiteboard.id,
+    content: whiteboard.content,
+    lastModified: whiteboard.lastModified,
+    contentLength: whiteboard.content.length
   });
 });
 
