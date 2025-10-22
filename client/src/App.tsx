@@ -5,8 +5,14 @@ const App: React.FC = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [content, setContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [boardId, setBoardId] = useState<string>('main-board');
 
   useEffect(() => {
+    // 从 URL 路径获取白板 ID
+    const path = window.location.pathname;
+    const pathBoardId = path.slice(1) || 'main-board'; // 去掉开头的 '/'
+    setBoardId(pathBoardId);
+
     // 初始化 Socket.IO 连接
     const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
     const newSocket = io(serverUrl, {
@@ -23,7 +29,7 @@ const App: React.FC = () => {
 
         if (newSocket) {
           newSocket.emit('content-update', {
-            whiteboardId: 'main-board',
+            whiteboardId: pathBoardId,
             content: newContent
           });
         }
@@ -41,9 +47,10 @@ const App: React.FC = () => {
     // 连接事件
     newSocket.on('connect', () => {
       console.log('已连接到服务器，Socket ID:', newSocket.id);
+      console.log('白板 ID:', pathBoardId);
 
-      // 加入默认白板
-      newSocket.emit('join-whiteboard', 'main-board');
+      // 加入指定白板
+      newSocket.emit('join-whiteboard', pathBoardId);
     });
 
     newSocket.on('disconnect', () => {
@@ -88,10 +95,10 @@ const App: React.FC = () => {
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setContent(newContent);
-    
+
     if (socket) {
       socket.emit('content-update', {
-        whiteboardId: 'main-board',
+        whiteboardId: boardId,
         content: newContent
       });
     }

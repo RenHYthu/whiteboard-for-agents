@@ -249,11 +249,19 @@ io.on('connection', (socket) => {
   // 加入白板
   socket.on('join-whiteboard', (whiteboardId) => {
     const boardId = whiteboardId || DEFAULT_BOARD_ID;
-    const whiteboard = whiteboards.get(boardId);
-    
+    let whiteboard = whiteboards.get(boardId);
+
+    // 如果白板不存在，自动创建
     if (!whiteboard) {
-      socket.emit('error', { message: '白板不存在' });
-      return;
+      whiteboard = {
+        id: boardId,
+        content: '',
+        lastModified: new Date(),
+        users: new Set()
+      };
+      whiteboards.set(boardId, whiteboard);
+      saveData();
+      console.log(`自动创建新白板: ${boardId}`);
     }
     
     socket.join(boardId);
