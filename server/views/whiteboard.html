@@ -85,6 +85,12 @@
         </div>
     </div>
 
+    <!-- Hidden content for web crawlers and AI agents -->
+    <div id="whiteboard-content" style="display: none;">
+        <h1>Whiteboard Content - {{boardId}}</h1>
+        <pre>{{initialContent}}</pre>
+    </div>
+
     <!-- Socket.IO Client CDN - Load first -->
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 
