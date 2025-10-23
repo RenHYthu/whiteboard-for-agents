@@ -267,62 +267,56 @@ function createMCPServer() {
   return server;
 }
 
-// 存储活跃的服务器实例
+// 存储活跃的服务器实例 (by session ID)
 const activeServers = new Map();
 
 // SSE 端点
 app.get('/sse', async (req, res) => {
   console.log('新的 SSE 连接');
 
-  const server = createMCPServer();
-  const transport = new SSEServerTransport('/message', res);
+  try {
+    const server = createMCPServer();
+    const transport = new SSEServerTransport('/message', res);
 
-  // 等待连接建立并获取 session ID
-  await server.connect(transport);
+    // ✅ transport.sessionId 是直接可用的属性！
+    const sessionId = transport.sessionId;
+    console.log(`创建新 session: ${sessionId}`);
 
-  // 从 transport 获取 session ID
-  // SSEServerTransport 会在发送 endpoint 事件时包含 sessionId
-  // 我们需要从 endpoint URL 中提取它
-  let sessionId = null;
+    // 保存 server 和 transport
+    activeServers.set(sessionId, { server, transport });
+    console.log(`Session ${sessionId} 已保存，当前活跃 sessions: ${activeServers.size}`);
 
-  // 监听 res 的数据，提取 sessionId
-  const originalWrite = res.write.bind(res);
-  res.write = function(chunk) {
-    const result = originalWrite(chunk);
+    // ✅ 使用 transport.onclose 而不是 req.on('close')
+    transport.onclose = () => {
+      console.log(`SSE transport 关闭: ${sessionId}`);
 
-    // 只在第一次写入时提取 sessionId
-    if (!sessionId && chunk) {
-      const chunkStr = chunk.toString();
-      const match = chunkStr.match(/sessionId=([a-f0-9-]+)/);
-      if (match) {
-        sessionId = match[1];
-        activeServers.set(sessionId, { server, transport });
-        console.log(`Session ${sessionId} 已创建并保存`);
-      }
+      // 延迟 30 秒后清理，避免立即删除（给客户端时间发送请求）
+      setTimeout(() => {
+        if (activeServers.has(sessionId)) {
+          console.log(`清理过期 session: ${sessionId}`);
+          activeServers.delete(sessionId);
+          console.log(`当前活跃 sessions: ${activeServers.size}`);
+        }
+      }, 30000);
+    };
+
+    // 连接 transport 到 server
+    await server.connect(transport);
+    console.log(`Session ${sessionId} 已连接`);
+
+  } catch (error) {
+    console.error('建立 SSE 连接失败:', error);
+    if (!res.headersSent) {
+      res.status(500).send('Error establishing SSE stream');
     }
-
-    return result;
-  };
-
-  // 连接关闭时延迟清理（给客户端时间发送请求）
-  req.on('close', () => {
-    console.log(`SSE 连接关闭: ${sessionId}`);
-
-    // 延迟 30 秒后清理，避免立即删除
-    setTimeout(() => {
-      if (activeServers.has(sessionId)) {
-        console.log(`清理过期 session: ${sessionId}`);
-        activeServers.delete(sessionId);
-      }
-    }, 30000);
-  });
+  }
 });
 
 // POST 端点用于接收消息
 app.post('/message', async (req, res) => {
   const sessionId = req.query.sessionId;
 
-  console.log(`收到消息请求: sessionId=${sessionId}`);
+  console.log(`收到消息请求: sessionId=${sessionId}, method=${req.body?.method}`);
 
   if (!sessionId) {
     console.error('缺少 sessionId');
@@ -332,13 +326,15 @@ app.post('/message', async (req, res) => {
   const session = activeServers.get(sessionId);
 
   if (!session) {
-    console.error(`找不到 session: ${sessionId}`);
+    console.error(`找不到 session: ${sessionId}, 当前活跃 sessions: ${activeServers.size}`);
+    console.error(`活跃 session IDs: ${Array.from(activeServers.keys()).join(', ')}`);
     return res.status(404).json({ error: 'Session not found' });
   }
 
   try {
-    // 让 transport 处理消息
-    await session.transport.handlePostMessage(req, res);
+    // ✅ handlePostMessage 需要 3 个参数: req, res, body
+    await session.transport.handlePostMessage(req, res, req.body);
+    console.log(`消息处理成功: ${req.body?.method}`);
   } catch (error) {
     console.error('处理消息失败:', error);
     if (!res.headersSent) {

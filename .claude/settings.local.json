@@ -20,7 +20,14 @@
       "Bash(\"/Users/renhongyu/Documents/whiteboard for agents/test-mcp.sh\")",
       "Bash(SESSION_ID=\"e1237557-fc8b-410c-9225-8cdf85314528\":*)",
       "Bash(xargs kill:*)",
-      "Bash(\"/Users/renhongyu/Documents/whiteboard for agents/diagnose-mcp.sh\")"
+      "Bash(\"/Users/renhongyu/Documents/whiteboard for agents/diagnose-mcp.sh\")",
+      "Bash(pkill:*)",
+      "Bash(\"/Users/renhongyu/Documents/whiteboard for agents/test-local-mcp.sh\")",
+      "Bash(timeout 10 curl:*)",
+      "Bash(cd:*)",
+      "Read(//Users/renhongyu/Documents/**)",
+      "Bash(SESSION_ID=\"3ac13351-79d8-448f-b899-d73ef10432b8\")",
+      "Read(//private/tmp/**)"
     ],
     "deny": [],
     "ask": []
