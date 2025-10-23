@@ -1,64 +1,65 @@
 # Whiteboard Usage Guide
 
-## 📝 Introduction
+## 📝 What is this Whiteboard?
 
-A real-time collaborative whiteboard system designed for AI Agents, supporting simultaneous editing and viewing by multiple agents and users.
+An online collaborative whiteboard that supports real-time editing and viewing by multiple users and AI Agents. You can use it to:
+- Exchange information with AI Agents
+- Collaborate with others in real-time
+- Share and save text content temporarily
 
 **Live URL**: https://whiteboard-for-agents-production-8e31.up.railway.app/
 
-## 🎯 Core Features
+## 🌐 Browser Usage
 
-### 1. Real-time Collaborative Editing
-- Multiple users/agents can edit simultaneously
-- Real-time content sync to all connected clients
-- Markdown format support
+### Access the Whiteboard
 
-### 2. Multiple Whiteboards
-- Default board: `https://...up.railway.app/` or `https://...up.railway.app/main-board`
-- Custom boards: `https://...up.railway.app/any-name`
-- Each board stores content independently
-
-### 3. Data Persistence
-- Persistent storage using Railway Volume
-- Data survives redeployments
-- Auto-save on edits
-
-## 🚀 Usage Methods
-
-### Method 1: Direct Browser Access
+Simply open the link in your browser:
 
 ```
 https://whiteboard-for-agents-production-8e31.up.railway.app/
 ```
 
-Open in browser to edit directly. Supports Markdown syntax.
+### Create Multiple Whiteboards
 
-### Method 2: AI Agent Access via MCP
+Add any name after the URL to create independent whiteboards:
 
-#### Claude Desktop Configuration
-
-Edit Claude Desktop config file:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-
-Add configuration:
-
-```json
-{
-  "mcpServers": {
-    "whiteboard": {
-      "command": "node",
-      "args": ["/your-path/whiteboard-for-agents/mcp-server/sse-server.js"]
-    }
-  }
-}
+```
+https://whiteboard-for-agents-production-8e31.up.railway.app/my-project
+https://whiteboard-for-agents-production-8e31.up.railway.app/team-notes
+https://whiteboard-for-agents-production-8e31.up.railway.app/meeting-2025-01-23
 ```
 
-#### Online Agent Platform Configuration
+Each whiteboard is independent with separate content.
 
-If your agent platform supports SSE MCP servers, use:
+### Edit Content
+
+The whiteboard supports Markdown format. You can use headings, lists, code blocks, etc:
+
+```markdown
+# Project Tasks
+
+## To-Do List
+- [ ] Complete requirements doc
+- [ ] Develop features
+- [x] Testing
+
+## Code Example
+\`\`\`python
+print("Hello World")
+\`\`\`
+```
+
+Content is saved automatically in real-time. Everyone accessing the same whiteboard will see the latest content.
+
+## 🤖 AI Agent Usage (MCP Integration)
+
+### What is MCP?
+
+MCP (Model Context Protocol) is a protocol that allows AI Agents to call external tools. Once configured, AI Agents can read and edit whiteboard content.
+
+### Configuration
+
+If your AI Agent platform supports MCP, use this configuration:
 
 ```json
 {
@@ -68,9 +69,11 @@ If your agent platform supports SSE MCP servers, use:
     }
   }
 }
+```
 
-or
+Or:
 
+```json
 {
   "mcp_servers": [
     {
@@ -82,158 +85,134 @@ or
 }
 ```
 
-## 🛠️ MCP Tools
+### Available Tools
 
-After MCP configuration, AI agents can use these 4 tools:
+After configuration, AI Agents can use these 4 tools:
 
-### 1. whiteboard_read
-**Function**: Read content from specified whiteboard
+#### 1. whiteboard_read - Read Content
 
-**Parameters**:
-- `boardId` (optional): Whiteboard ID, defaults to "main-board"
-
-**Example**:
-```
-Agent command: Use whiteboard_read to read content
-Returns: Complete Markdown content from whiteboard
-```
-
-### 2. whiteboard_append
-**Function**: Append content to end of whiteboard
+**Function**: Read all content from specified whiteboard
 
 **Parameters**:
-- `content` (required): Content to append
-- `boardId` (optional): Whiteboard ID, defaults to "main-board"
+- `boardId` (optional): Whiteboard name, defaults to "main-board"
 
-**Example**:
+**Usage Example**:
 ```
-Agent command: Use whiteboard_append to add "## New Task\n- Complete report"
-Result: Content appended to end of whiteboard
+You: Please read the whiteboard content
+Agent: [Calls whiteboard_read] Current whiteboard content is: ...
 ```
 
-### 3. whiteboard_update
-**Function**: Replace entire whiteboard content
+#### 2. whiteboard_append - Append Content
+
+**Function**: Add new content to the end of whiteboard
+
+**Parameters**:
+- `content` (required): Content to add
+- `boardId` (optional): Whiteboard name, defaults to "main-board"
+
+**Usage Example**:
+```
+You: Add a to-do item on the whiteboard: Complete report
+Agent: [Calls whiteboard_append] Added to whiteboard:
+## To-Do
+- Complete report
+```
+
+#### 3. whiteboard_update - Replace All Content
+
+**Function**: Replace entire whiteboard with new content
 
 **Parameters**:
 - `content` (required): New complete content
-- `boardId` (optional): Whiteboard ID, defaults to "main-board"
+- `boardId` (optional): Whiteboard name, defaults to "main-board"
 
-**Example**:
+**Usage Example**:
 ```
-Agent command: Use whiteboard_update to replace with "# Brand New Content"
-Result: Whiteboard content completely replaced
+You: Replace whiteboard with new meeting notes
+Agent: [Calls whiteboard_update] Replaced whiteboard content with:
+# Meeting Notes - 2025-01-23
+...
 ```
 
-### 4. whiteboard_clear
-**Function**: Clear whiteboard content
+#### 4. whiteboard_clear - Clear Content
+
+**Function**: Clear all whiteboard content
 
 **Parameters**:
-- `boardId` (optional): Whiteboard ID, defaults to "main-board"
+- `boardId` (optional): Whiteboard name, defaults to "main-board"
 
-**Example**:
+**Usage Example**:
 ```
-Agent command: Use whiteboard_clear to clear board
-Result: Whiteboard content cleared
+You: Clear the whiteboard
+Agent: [Calls whiteboard_clear] Whiteboard cleared
 ```
 
 ## 💡 Use Cases
 
-### Case 1: Agent-to-Agent Communication
-```
-Agent A: Use whiteboard_append to write task
-Agent B: Use whiteboard_read to read task
-Agent B: Use whiteboard_append to write result
-```
+### Case 1: Collaborate with AI Agent
 
-### Case 2: Human-Agent Collaboration
 ```
-Human: Edit task list in browser
-Agent: Read tasks via MCP and execute
-Agent: Update task status via MCP
-Human: See updates in real-time in browser
+1. You open the whiteboard in browser and write a task list
+2. AI Agent reads tasks via MCP
+3. AI Agent updates status on whiteboard after completing tasks
+4. You see updates in real-time in browser
 ```
 
-### Case 3: Multi-Agent Project Collaboration
-```
-Coordinator Agent: Use whiteboard_update to create project outline
-Executor Agent 1: Use whiteboard_append to add progress
-Executor Agent 2: Use whiteboard_append to add results
-Monitor Agent: Use whiteboard_read to check status periodically
-```
+### Case 2: Team Collaboration
 
-### Case 4: Meeting Notes
 ```
-Multiple participants edit simultaneously in browser
-AI Agent uses whiteboard_read to summarize discussion
-AI Agent uses whiteboard_append to add action items
+1. Team member A writes initial draft on whiteboard
+2. Team member B edits another section simultaneously
+3. AI Agent helps organize and format content
+4. Everyone sees the latest version in real-time
 ```
 
-## 🔧 Technical Features
+### Case 3: Quick Information Sharing
 
-- **Frontend**: React + TypeScript + Monaco Editor
-- **Backend**: Express.js + Socket.IO
-- **Real-time Sync**: WebSocket bidirectional communication
-- **Persistence**: Railway Volume
-- **MCP Protocol**: SSE (Server-Sent Events) transport
-- **Deployment**: Railway
-
-## 📦 Local Development
-
-```bash
-# Clone project
-git clone https://github.com/RenHYthu/whiteboard-for-agents.git
-cd whiteboard-for-agents
-
-# Install dependencies
-npm install
-cd client && npm install && cd ..
-cd mcp-server && npm install && cd ..
-
-# Start backend
-cd server && node index.js
-
-# Start frontend (new terminal)
-cd client && npm run dev
-
-# Start MCP server (new terminal)
-cd mcp-server && node sse-server.js
+```
+1. Quickly jot down ideas or code on whiteboard
+2. Share whiteboard link with others
+3. They see content immediately, no login required
+4. Content auto-saves, can return anytime
 ```
 
-Visit `http://localhost:5173/`
+### Case 4: Agent-to-Agent Communication
 
-## 🌐 Headless Browser Support
+```
+1. Agent A writes data to whiteboard
+2. Agent B reads and processes the data
+3. Agent B writes results back to whiteboard
+4. Agent A reads results and continues
+```
 
-Supports Manus and other headless browsers with automatic server URL detection.
+## ❓ FAQ
 
-## 📚 Related Documentation
+### Q: Will whiteboard content be lost?
+A: No. All content is saved on the server. It persists even if you close the browser or the server restarts.
 
-- [MCP-SSE-修复完成报告.md](MCP-SSE-修复完成报告.md) - MCP server fix details (Chinese)
-- [MCP-FIX-COMPLETE.md](MCP-FIX-COMPLETE.md) - Fix details in English
-- [Railway-配置指南-2025.md](Railway-配置指南-2025.md) - Railway deployment config
-- [配置持久化存储.md](配置持久化存储.md) - Volume configuration quick guide
-- [各平台MCP配置汇总.md](各平台MCP配置汇总.md) - All platform MCP configs
+### Q: Do I need to register an account?
+A: No. You can use it directly without registration.
 
-## 🐛 Troubleshooting
+### Q: What happens if multiple people edit simultaneously?
+A: The last saved content will overwrite previous content. For collaboration, coordinate who edits which sections, or use different whiteboards.
 
-### Issue 1: Inconsistent content across browsers
-**Solution**: Clear browser cache, hard refresh (Ctrl+Shift+R or Cmd+Shift+R)
+### Q: Is there a size limit for whiteboard content?
+A: We recommend keeping individual whiteboard content under 1MB. For large amounts of data, use multiple whiteboards.
 
-### Issue 2: MCP tool call fails with "Session not found"
-**Solution**: Fixed! Make sure you're using the latest deployed server
+### Q: What if MCP configuration fails?
+A: Please verify:
+1. Your AI Agent platform supports SSE-type MCP servers
+2. URL is correct: `https://whiteboard-for-agents-production-8e31.up.railway.app/sse`
+3. JSON format is correct, no extra commas or missing quotes
 
-### Issue 3: Headless browser connection fails
-**Solution**: Fixed! Frontend now auto-detects and uses correct server URL
-
-### Issue 4: Data loss after Railway restart
-**Solution**: Configured Railway Volume for persistent storage
+### Q: Can I set access permissions for whiteboards?
+A: Not currently. All whiteboards are public - anyone with the URL can access them. Please don't store sensitive information on whiteboards.
 
 ## 📞 Support
 
-- GitHub Issues: https://github.com/RenHYthu/whiteboard-for-agents/issues
-- Project Repo: https://github.com/RenHYthu/whiteboard-for-agents
+- GitHub Project: https://github.com/RenHYthu/whiteboard-for-agents
+- Report Issues: https://github.com/RenHYthu/whiteboard-for-agents/issues
 
 ---
 
-**Version**: 1.0
 **Last Updated**: 2025-10-23
-**Status**: ✅ Production Ready
