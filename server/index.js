@@ -33,9 +33,16 @@ app.engine('html', (filePath, options, callback) => {
     // 简单的模板替换
     let rendered = content;
     for (const key in options) {
-      const value = typeof options[key] === 'string'
-        ? options[key]
-        : JSON.stringify(options[key]);
+      let value;
+      if (typeof options[key] === 'string') {
+        // 对字符串进行转义，防止破坏 JavaScript 语法
+        value = options[key]
+          .replace(/\\/g, '\\\\')  // 转义反斜杠
+          .replace(/`/g, '\\`')    // 转义反引号
+          .replace(/\$/g, '\\$');  // 转义美元符号
+      } else {
+        value = JSON.stringify(options[key]);
+      }
       rendered = rendered.replace(new RegExp(`{{${key}}}`, 'g'), value);
     }
 
