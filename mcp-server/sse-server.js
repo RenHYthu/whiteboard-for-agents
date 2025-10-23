@@ -277,18 +277,44 @@ app.get('/sse', async (req, res) => {
   const server = createMCPServer();
   const transport = new SSEServerTransport('/message', res);
 
-  // 生成唯一的会话 ID
-  const sessionId = transport._sessionId || Date.now().toString();
-  activeServers.set(sessionId, { server, transport });
-
-  console.log(`Session ${sessionId} 已创建`);
-
+  // 等待连接建立并获取 session ID
   await server.connect(transport);
 
-  // 连接关闭时清理
+  // 从 transport 获取 session ID
+  // SSEServerTransport 会在发送 endpoint 事件时包含 sessionId
+  // 我们需要从 endpoint URL 中提取它
+  let sessionId = null;
+
+  // 监听 res 的数据，提取 sessionId
+  const originalWrite = res.write.bind(res);
+  res.write = function(chunk) {
+    const result = originalWrite(chunk);
+
+    // 只在第一次写入时提取 sessionId
+    if (!sessionId && chunk) {
+      const chunkStr = chunk.toString();
+      const match = chunkStr.match(/sessionId=([a-f0-9-]+)/);
+      if (match) {
+        sessionId = match[1];
+        activeServers.set(sessionId, { server, transport });
+        console.log(`Session ${sessionId} 已创建并保存`);
+      }
+    }
+
+    return result;
+  };
+
+  // 连接关闭时延迟清理（给客户端时间发送请求）
   req.on('close', () => {
     console.log(`SSE 连接关闭: ${sessionId}`);
-    activeServers.delete(sessionId);
+
+    // 延迟 30 秒后清理，避免立即删除
+    setTimeout(() => {
+      if (activeServers.has(sessionId)) {
+        console.log(`清理过期 session: ${sessionId}`);
+        activeServers.delete(sessionId);
+      }
+    }, 30000);
   });
 });
 
