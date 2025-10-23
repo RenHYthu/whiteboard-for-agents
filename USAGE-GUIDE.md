@@ -147,6 +147,170 @@ You: Clear the whiteboard
 Agent: [Calls whiteboard_clear] Whiteboard cleared
 ```
 
+## 🔌 HTTP API Usage
+
+If you want to access the whiteboard programmatically, you can use the following HTTP API:
+
+### Base URL
+
+```
+https://whiteboard-for-agents-production-8e31.up.railway.app/api
+```
+
+### API Endpoints
+
+#### 1. Read Whiteboard Content
+
+```http
+GET /api/whiteboard/{boardId}
+```
+
+**Parameters**:
+- `{boardId}`: Whiteboard ID (e.g., `main-board` or custom name)
+
+**Response Example**:
+```json
+{
+  "id": "main-board",
+  "content": "# Whiteboard Content\n\nThis is the content...",
+  "lastModified": "2025-01-23T10:30:00.000Z",
+  "userCount": 2
+}
+```
+
+**curl Example**:
+```bash
+curl https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board
+```
+
+#### 2. Append Content to Whiteboard
+
+```http
+POST /api/whiteboard/{boardId}/append
+Content-Type: application/json
+
+{
+  "content": "Content to append",
+  "separator": "\n\n"  // Optional, defaults to "\n\n"
+}
+```
+
+**Parameters**:
+- `{boardId}`: Whiteboard ID
+- `content` (required): Content to append
+- `separator` (optional): Separator, defaults to two newlines
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "id": "main-board",
+  "content": "Original content\n\nNewly appended content",
+  "lastModified": "2025-01-23T10:35:00.000Z",
+  "contentLength": 1024
+}
+```
+
+**curl Example**:
+```bash
+curl -X POST https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board/append \
+  -H "Content-Type: application/json" \
+  -d '{"content": "## New Message\n- Task completed"}'
+```
+
+#### 3. Replace All Whiteboard Content
+
+```http
+POST /api/whiteboard/{boardId}/update
+Content-Type: application/json
+
+{
+  "content": "New complete content"
+}
+```
+
+**Parameters**:
+- `{boardId}`: Whiteboard ID
+- `content` (required): New complete content (will completely replace existing content)
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "id": "main-board",
+  "content": "New complete content",
+  "lastModified": "2025-01-23T10:40:00.000Z",
+  "contentLength": 256
+}
+```
+
+**curl Example**:
+```bash
+curl -X POST https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board/update \
+  -H "Content-Type: application/json" \
+  -d '{"content": "# Brand New Content\n\nThis is the replaced content"}'
+```
+
+### Python Example
+
+```python
+import requests
+
+BASE_URL = "https://whiteboard-for-agents-production-8e31.up.railway.app/api"
+
+# Read whiteboard
+response = requests.get(f"{BASE_URL}/whiteboard/main-board")
+data = response.json()
+print(f"Whiteboard content: {data['content']}")
+
+# Append content
+response = requests.post(
+    f"{BASE_URL}/whiteboard/main-board/append",
+    json={"content": "## Python Agent Message\n- Test message"}
+)
+print(f"Append success: {response.json()['success']}")
+
+# Replace content
+response = requests.post(
+    f"{BASE_URL}/whiteboard/main-board/update",
+    json={"content": "# New Content\n\nUpdated by Python"}
+)
+print(f"Update success: {response.json()['success']}")
+```
+
+### JavaScript Example
+
+```javascript
+const BASE_URL = "https://whiteboard-for-agents-production-8e31.up.railway.app/api";
+
+// Read whiteboard
+const response = await fetch(`${BASE_URL}/whiteboard/main-board`);
+const data = await response.json();
+console.log("Whiteboard content:", data.content);
+
+// Append content
+const appendResponse = await fetch(`${BASE_URL}/whiteboard/main-board/append`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ content: "## JavaScript Agent Message\n- Test message" })
+});
+console.log("Append success:", (await appendResponse.json()).success);
+
+// Replace content
+const updateResponse = await fetch(`${BASE_URL}/whiteboard/main-board/update`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ content: "# New Content\n\nUpdated by JavaScript" })
+});
+console.log("Update success:", (await updateResponse.json()).success);
+```
+
+### API Features
+
+- **Real-time Sync**: Content modified via API is broadcast in real-time to all browser clients
+- **Auto-create**: Whiteboards are automatically created on first access if they don't exist
+- **Persistence**: All modifications are automatically saved to the server
+
 ## 💡 Use Cases
 
 ### Case 1: Collaborate with AI Agent

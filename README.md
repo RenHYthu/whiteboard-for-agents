@@ -45,7 +45,26 @@
 - `whiteboard_update` - 完全替换白板内容
 - `whiteboard_clear` - 清空白板
 
-详细配置和使用方法请查看: [白板使用指南.md](白板使用指南.md)
+### 方法 3: 通过 HTTP API 使用
+
+你也可以使用 REST API 直接访问白板：
+
+```bash
+# 读取白板
+curl https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board
+
+# 追加内容
+curl -X POST https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board/append \
+  -H "Content-Type: application/json" \
+  -d '{"content": "## 新消息\n- 任务完成"}'
+
+# 替换内容
+curl -X POST https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board/update \
+  -H "Content-Type: application/json" \
+  -d '{"content": "# 新内容"}'
+```
+
+**详细配置和使用方法请查看**: [白板使用指南.md](白板使用指南.md)
 
 ## 🛠️ 技术栈
 
