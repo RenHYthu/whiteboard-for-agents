@@ -15,6 +15,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
             height: 100vh;
             overflow: hidden;
+            background: white;
         }
 
         .container {
@@ -23,34 +24,27 @@
             height: 100vh;
         }
 
-        .header {
-            background: #1e1e1e;
-            color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #333;
-        }
-
-        .header h1 {
-            font-size: 1.2rem;
-            font-weight: 500;
-        }
-
-        .board-info {
-            font-size: 0.9rem;
-            color: #888;
-        }
-
         .editor-container {
             flex: 1;
             position: relative;
+            width: 100%;
+            height: 100vh;
         }
 
         #editor {
             width: 100%;
             height: 100%;
+        }
+
+        .board-info {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 0.75rem;
+            color: #999;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            z-index: 10;
+            pointer-events: none;
         }
 
         .loading {
@@ -60,6 +54,7 @@
             transform: translate(-50%, -50%);
             text-align: center;
             color: #888;
+            font-size: 0.9rem;
         }
 
         .status {
@@ -72,6 +67,7 @@
             border-radius: 4px;
             font-size: 0.85rem;
             display: none;
+            z-index: 10;
         }
 
         .status.show {
@@ -81,16 +77,11 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>{{title}}</h1>
-            <div class="board-info">
-                白板 ID: <strong>{{boardId}}</strong>
-            </div>
-        </div>
         <div class="editor-container">
-            <div class="loading" id="loading">正在加载编辑器...</div>
+            <div class="board-info">Board ID: {{boardId}}</div>
+            <div class="loading" id="loading">Loading editor...</div>
             <div id="editor"></div>
-            <div class="status" id="status">已保存</div>
+            <div class="status" id="status">Saved</div>
         </div>
     </div>
 
@@ -126,14 +117,14 @@
             editor = monaco.editor.create(document.getElementById('editor'), {
                 value: INITIAL_CONTENT,
                 language: 'markdown',
-                theme: 'vs-dark',
+                theme: 'vs',
                 automaticLayout: true,
                 fontSize: 14,
                 wordWrap: 'on',
                 minimap: { enabled: false }
             });
 
-            console.log('✅ 编辑器已创建');
+            console.log('✅ Editor created');
 
             // 初始化 Socket.IO
             initSocket();
@@ -147,14 +138,14 @@
                             whiteboardId: BOARD_ID,
                             content: content
                         });
-                        showStatus('保存中...');
+                        showStatus('Saving...');
                     }
                 }
             });
         });
 
         function initSocket() {
-            console.log('🔌 连接到服务器:', SERVER_URL);
+            console.log('🔌 Connecting to server:', SERVER_URL);
 
             socket = io(SERVER_URL, {
                 transports: ['websocket', 'polling'],
@@ -162,38 +153,38 @@
             });
 
             socket.on('connect', () => {
-                console.log('✅ 已连接到服务器，Socket ID:', socket.id);
+                console.log('✅ Connected to server, Socket ID:', socket.id);
                 socket.emit('join-whiteboard', BOARD_ID);
             });
 
             socket.on('disconnect', () => {
-                console.log('❌ 与服务器断开连接');
-                showStatus('离线');
+                console.log('❌ Disconnected from server');
+                showStatus('Offline');
             });
 
             socket.on('whiteboard-data', (data) => {
-                console.log('📥 收到白板数据');
+                console.log('📥 Received whiteboard data');
                 if (editor && data.content !== editor.getValue()) {
                     isUpdatingFromServer = true;
                     editor.setValue(data.content);
                     isUpdatingFromServer = false;
-                    showStatus('已同步');
+                    showStatus('Synced');
                 }
             });
 
             socket.on('content-updated', (data) => {
-                console.log('🔄 内容已更新');
+                console.log('🔄 Content updated');
                 if (editor && data.content !== editor.getValue()) {
                     isUpdatingFromServer = true;
                     editor.setValue(data.content);
                     isUpdatingFromServer = false;
-                    showStatus('已同步');
+                    showStatus('Synced');
                 }
             });
 
             socket.on('error', (error) => {
-                console.error('❌ Socket 错误:', error);
-                showStatus('错误');
+                console.error('❌ Socket error:', error);
+                showStatus('Error');
             });
         }
 
