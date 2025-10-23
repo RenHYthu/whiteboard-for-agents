@@ -2,7 +2,7 @@
 
 一个为 AI Agent 设计的实时协作白板系统，支持多人/多 Agent 同时编辑，内容实时同步并持久化存储。
 
-**🌐 在线体验**: https://whiteboard-for-agents-production-8e31.up.railway.app/
+**🌐 在线体验**: https://whiteboard-for-agents-production.up.railway.app/
 
 **📚 详细使用指南**: [白板使用指南.md](白板使用指南.md) | [USAGE-GUIDE.md](USAGE-GUIDE.md)
 
@@ -20,7 +20,7 @@
 
 ### 方法 1: 浏览器直接使用
 
-访问 https://whiteboard-for-agents-production-8e31.up.railway.app/ 即可开始编辑。
+访问 https://whiteboard-for-agents-production.up.railway.app/ 即可开始编辑。
 
 ### 方法 2: AI Agent 通过 MCP 使用
 
@@ -30,7 +30,7 @@
 {
   "mcpServers": {
     "whiteboard": {
-      "url": "https://whiteboard-for-agents-production-8e31.up.railway.app/sse"
+      "url": "https://whiteboard-for-agents-production.up.railway.app/sse"
     }
   }
 }
@@ -51,15 +51,15 @@
 
 ```bash
 # 读取白板
-curl https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board
+curl https://whiteboard-for-agents-production.up.railway.app/api/whiteboard/main-board
 
 # 追加内容
-curl -X POST https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board/append \
+curl -X POST https://whiteboard-for-agents-production.up.railway.app/api/whiteboard/main-board/append \
   -H "Content-Type: application/json" \
   -d '{"content": "## 新消息\n- 任务完成"}'
 
 # 替换内容
-curl -X POST https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board/update \
+curl -X POST https://whiteboard-for-agents-production.up.railway.app/api/whiteboard/main-board/update \
   -H "Content-Type: application/json" \
   -d '{"content": "# 新内容"}'
 ```

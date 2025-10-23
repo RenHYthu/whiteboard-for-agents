@@ -7,7 +7,7 @@ An online collaborative whiteboard that supports real-time editing and viewing b
 - Collaborate with others in real-time
 - Share and save text content temporarily
 
-**Live URL**: https://whiteboard-for-agents-production-8e31.up.railway.app/
+**Live URL**: https://whiteboard-for-agents-production.up.railway.app/
 
 ## 🌐 Browser Usage
 
@@ -16,7 +16,7 @@ An online collaborative whiteboard that supports real-time editing and viewing b
 Simply open the link in your browser:
 
 ```
-https://whiteboard-for-agents-production-8e31.up.railway.app/
+https://whiteboard-for-agents-production.up.railway.app/
 ```
 
 ### Create Multiple Whiteboards
@@ -24,9 +24,9 @@ https://whiteboard-for-agents-production-8e31.up.railway.app/
 Add any name after the URL to create independent whiteboards:
 
 ```
-https://whiteboard-for-agents-production-8e31.up.railway.app/my-project
-https://whiteboard-for-agents-production-8e31.up.railway.app/team-notes
-https://whiteboard-for-agents-production-8e31.up.railway.app/meeting-2025-01-23
+https://whiteboard-for-agents-production.up.railway.app/my-project
+https://whiteboard-for-agents-production.up.railway.app/team-notes
+https://whiteboard-for-agents-production.up.railway.app/meeting-2025-01-23
 ```
 
 Each whiteboard is independent with separate content.
@@ -65,7 +65,7 @@ If your AI Agent platform supports MCP, use this configuration:
 {
   "mcpServers": {
     "whiteboard": {
-      "url": "https://whiteboard-for-agents-production-8e31.up.railway.app/sse"
+      "url": "https://whiteboard-for-agents-production.up.railway.app/sse"
     }
   }
 }
@@ -78,7 +78,7 @@ Or:
   "mcp_servers": [
     {
       "type": "url",
-      "url": "https://whiteboard-for-agents-production-8e31.up.railway.app/sse",
+      "url": "https://whiteboard-for-agents-production.up.railway.app/sse",
       "name": "whiteboard"
     }
   ]
@@ -154,7 +154,7 @@ If you want to access the whiteboard programmatically, you can use the following
 ### Base URL
 
 ```
-https://whiteboard-for-agents-production-8e31.up.railway.app/api
+https://whiteboard-for-agents-production.up.railway.app/api
 ```
 
 ### API Endpoints
@@ -180,7 +180,7 @@ GET /api/whiteboard/{boardId}
 
 **curl Example**:
 ```bash
-curl https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board
+curl https://whiteboard-for-agents-production.up.railway.app/api/whiteboard/main-board
 ```
 
 #### 2. Append Content to Whiteboard
@@ -213,7 +213,7 @@ Content-Type: application/json
 
 **curl Example**:
 ```bash
-curl -X POST https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board/append \
+curl -X POST https://whiteboard-for-agents-production.up.railway.app/api/whiteboard/main-board/append \
   -H "Content-Type: application/json" \
   -d '{"content": "## New Message\n- Task completed"}'
 ```
@@ -246,7 +246,7 @@ Content-Type: application/json
 
 **curl Example**:
 ```bash
-curl -X POST https://whiteboard-for-agents-production-8e31.up.railway.app/api/whiteboard/main-board/update \
+curl -X POST https://whiteboard-for-agents-production.up.railway.app/api/whiteboard/main-board/update \
   -H "Content-Type: application/json" \
   -d '{"content": "# Brand New Content\n\nThis is the replaced content"}'
 ```
@@ -256,7 +256,7 @@ curl -X POST https://whiteboard-for-agents-production-8e31.up.railway.app/api/wh
 ```python
 import requests
 
-BASE_URL = "https://whiteboard-for-agents-production-8e31.up.railway.app/api"
+BASE_URL = "https://whiteboard-for-agents-production.up.railway.app/api"
 
 # Read whiteboard
 response = requests.get(f"{BASE_URL}/whiteboard/main-board")
@@ -281,7 +281,7 @@ print(f"Update success: {response.json()['success']}")
 ### JavaScript Example
 
 ```javascript
-const BASE_URL = "https://whiteboard-for-agents-production-8e31.up.railway.app/api";
+const BASE_URL = "https://whiteboard-for-agents-production.up.railway.app/api";
 
 // Read whiteboard
 const response = await fetch(`${BASE_URL}/whiteboard/main-board`);
@@ -366,7 +366,7 @@ A: We recommend keeping individual whiteboard content under 1MB. For large amoun
 ### Q: What if MCP configuration fails?
 A: Please verify:
 1. Your AI Agent platform supports SSE-type MCP servers
-2. URL is correct: `https://whiteboard-for-agents-production-8e31.up.railway.app/sse`
+2. URL is correct: `https://whiteboard-for-agents-production.up.railway.app/sse`
 3. JSON format is correct, no extra commas or missing quotes
 
 ### Q: Can I set access permissions for whiteboards?
