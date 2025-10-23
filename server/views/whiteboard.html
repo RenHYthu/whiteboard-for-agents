@@ -85,12 +85,12 @@
         </div>
     </div>
 
+    <!-- Socket.IO Client CDN - Load first -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+
     <!-- Monaco Editor CDN -->
     <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
-
-    <!-- Socket.IO Client CDN -->
-    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 
     <script>
         // 初始化数据（服务器端渲染）
@@ -145,6 +145,13 @@
         });
 
         function initSocket() {
+            // Check if Socket.IO is loaded
+            if (typeof io === 'undefined') {
+                console.error('❌ Socket.IO not loaded yet, retrying...');
+                setTimeout(initSocket, 100);
+                return;
+            }
+
             console.log('🔌 Connecting to server:', SERVER_URL);
 
             socket = io(SERVER_URL, {
