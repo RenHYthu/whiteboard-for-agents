@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background: #1e1e1e;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .header h1 {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .board-info {
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .editor-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #editor {
+            width: 100%;
+            height: 100%;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #888;
+        }
+
+        .status {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{title}}</h1>
+            <div class="board-info">
+                白板 ID: <strong>{{boardId}}</strong>
+            </div>
+        </div>
+        <div class="editor-container">
+            <div class="loading" id="loading">正在加载编辑器...</div>
+            <div id="editor"></div>
+            <div class="status" id="status">已保存</div>
+        </div>
+    </div>
+
+    <!-- Monaco Editor CDN -->
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+
+    <!-- Socket.IO Client CDN -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+
+    <script>
+        // 初始化数据（服务器端渲染）
+        const BOARD_ID = '{{boardId}}';
+        const INITIAL_CONTENT = {{initialContent}};
+        const SERVER_URL = window.location.origin;
+
+        // 配置 Monaco Editor
+        require.config({
+            paths: {
+                'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs'
+            }
+        });
+
+        let editor = null;
+        let socket = null;
+        let isUpdatingFromServer = false;
+
+        require(['vs/editor/editor.main'], function() {
+            // 隐藏加载提示
+            document.getElementById('loading').style.display = 'none';
+
+            // 创建编辑器
+            editor = monaco.editor.create(document.getElementById('editor'), {
+                value: INITIAL_CONTENT,
+                language: 'markdown',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                fontSize: 14,
+                wordWrap: 'on',
+                minimap: { enabled: false }
+            });
+
+            console.log('✅ 编辑器已创建');
+
+            // 初始化 Socket.IO
+            initSocket();
+
+            // 监听编辑器内容变化
+            editor.onDidChangeModelContent((event) => {
+                if (!isUpdatingFromServer) {
+                    const content = editor.getValue();
+                    if (socket && socket.connected) {
+                        socket.emit('content-update', {
+                            whiteboardId: BOARD_ID,
+                            content: content
+                        });
+                        showStatus('保存中...');
+                    }
+                }
+            });
+        });
+
+        function initSocket() {
+            console.log('🔌 连接到服务器:', SERVER_URL);
+
+            socket = io(SERVER_URL, {
+                transports: ['websocket', 'polling'],
+                autoConnect: true
+            });
+
+            socket.on('connect', () => {
+                console.log('✅ 已连接到服务器，Socket ID:', socket.id);
+                socket.emit('join-whiteboard', BOARD_ID);
+            });
+
+            socket.on('disconnect', () => {
+                console.log('❌ 与服务器断开连接');
+                showStatus('离线');
+            });
+
+            socket.on('whiteboard-data', (data) => {
+                console.log('📥 收到白板数据');
+                if (editor && data.content !== editor.getValue()) {
+                    isUpdatingFromServer = true;
+                    editor.setValue(data.content);
+                    isUpdatingFromServer = false;
+                    showStatus('已同步');
+                }
+            });
+
+            socket.on('content-updated', (data) => {
+                console.log('🔄 内容已更新');
+                if (editor && data.content !== editor.getValue()) {
+                    isUpdatingFromServer = true;
+                    editor.setValue(data.content);
+                    isUpdatingFromServer = false;
+                    showStatus('已同步');
+                }
+            });
+
+            socket.on('error', (error) => {
+                console.error('❌ Socket 错误:', error);
+                showStatus('错误');
+            });
+        }
+
+        function showStatus(message) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.classList.add('show');
+            setTimeout(() => {
+                statusEl.classList.remove('show');
+            }, 2000);
+        }
+
+        // 监听来自其他窗口的消息
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'WRITE_CONTENT' && editor) {
+                const currentContent = editor.getValue();
+                const newContent = currentContent + '\n\n' + event.data.content;
+                editor.setValue(newContent);
+
+                if (socket && socket.connected) {
+                    socket.emit('content-update', {
+                        whiteboardId: BOARD_ID,
+                        content: newContent
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>

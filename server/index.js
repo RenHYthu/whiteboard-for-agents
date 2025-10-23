@@ -22,7 +22,29 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 // 中间件
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// 模板引擎设置
+app.set('view engine', 'html');
+app.set('views', path.join(__dirname, 'views'));
+app.engine('html', (filePath, options, callback) => {
+  fs.readFile(filePath, 'utf-8', (err, content) => {
+    if (err) return callback(err);
+
+    // 简单的模板替换
+    let rendered = content;
+    for (const key in options) {
+      const value = typeof options[key] === 'string'
+        ? options[key]
+        : JSON.stringify(options[key]);
+      rendered = rendered.replace(new RegExp(`{{${key}}}`, 'g'), value);
+    }
+
+    callback(null, rendered);
+  });
+});
+
+// 注意：不再使用静态文件，改为完全 SSR
+// app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // 存储白板数据
 const whiteboards = new Map();
@@ -355,10 +377,10 @@ io.on('connection', (socket) => {
   });
 });
 
-// 服务前端应用
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
+// 注意：旧的 SPA fallback 路由已移除，改用 SSR
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+// });
 
 // 优雅关闭：在进程结束前保存数据
 process.on('SIGTERM', () => {
@@ -373,6 +395,32 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
+// SSR 路由 - 渲染白板页面
+// 排除 /api 路径，匹配所有其他路径
+app.get(/^\/(?!api\/)(.*)$/, (req, res) => {
+  const boardId = req.params[0] || DEFAULT_BOARD_ID;
+
+  // 获取或创建白板
+  let whiteboard = whiteboards.get(boardId);
+  if (!whiteboard) {
+    whiteboard = {
+      id: boardId,
+      content: '',
+      lastModified: new Date(),
+      users: new Set()
+    };
+    whiteboards.set(boardId, whiteboard);
+    saveData();
+  }
+
+  // 渲染 HTML（服务器端渲染）
+  res.render('whiteboard', {
+    title: `白板 - ${boardId}`,
+    boardId: boardId,
+    initialContent: whiteboard.content
+  });
+});
+
 // 定期保存（每30秒）
 setInterval(() => {
   saveDataNow();
@@ -382,4 +430,5 @@ server.listen(PORT, () => {
   console.log(`服务器运行在端口 ${PORT}`);
   console.log(`访问地址: http://localhost:${PORT}`);
   console.log(`数据目录: ${DATA_DIR}`);
+  console.log(`✅ SSR 模式已启用`);
 });
